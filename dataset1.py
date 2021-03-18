@@ -64,16 +64,41 @@ def test(weights, degree=2, num_points=50):
     return x_test, y_test
 
 
-DATASET_SIZE = 10
+def cross_validate(weights, x_val, y_val, degree):
+    x_val = get_polynomial_data(x_val, degree=degree)
+    y_pred = predict(x_val, weights)
+    err = 0
+    for i in range(x_val.shape[0]):
+        err += (y_pred[i] - y_val[i]) ** 2
+    err = err / 2
+    return err
+
+
+DATASET_SIZE = 200
+CROSSVAL_SIZE = 30
 degrees = [2, 3, 6, 9]
 lambdas = [0.0, 0.01, 0.1, 1.0]
 fig, ax = plt.subplots()
-for lambda_ in lambdas:
-    res = fit(x[0:DATASET_SIZE], y[0:DATASET_SIZE], 9, lambda_=lambda_)
-    x_test, y_test = test(res, degree=9, num_points=50)
-    ax.plot(x_test, y_test, label='Lambda=' + str(lambda_))
-plt.legend(loc='best')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.show()
-
+min_error = 9999
+best_weights = None
+best_degree = 2
+best_lambda = 0.0
+for degree in degrees:
+    for lambda_ in lambdas:
+        res = fit(x[0:DATASET_SIZE], y[0:DATASET_SIZE], degree=degree, lambda_=lambda_)
+        cross_val_err = cross_validate(res, x[DATASET_SIZE:DATASET_SIZE+CROSSVAL_SIZE], y[DATASET_SIZE:DATASET_SIZE+CROSSVAL_SIZE], degree)
+        if cross_val_err < min_error:
+            min_error = cross_val_err
+            best_weights = res
+            best_degree = degree
+            best_lambda = lambda_
+        # x_test, y_test = test(res, degree=degree, num_points=50)
+        # ax.plot(x_test, y_test, label='Lambda=' + str(lambda_))
+# plt.legend(loc='best')
+# plt.xlabel('x')
+# plt.ylabel('y')
+# plt.show()
+print(best_weights)
+print(min_error)
+print(best_degree)
+print(best_lambda)
